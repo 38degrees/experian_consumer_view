@@ -1,10 +1,10 @@
 require "active_support"
 require "active_support/cache"
 
-module ExperianConsumerViewClient
+module ExperianConsumerView
   class Client
 
-    CACHE_KEY = 'ExperianConsumerViewClient::Client::CachedToken'
+    CACHE_KEY = 'ExperianConsumerView::Client::CachedToken'
 
     # @param user_id [String] the username / email used to authorize use of the ConsumerView API
     # @param password [String] the password used to authorize use of the ConsumerView API
@@ -20,7 +20,7 @@ module ExperianConsumerViewClient
       @client_id = client_id
       @asset_id = asset_id
       @token_cache = token_cache || ActiveSupport::Cache::MemoryStore.new
-      @api = ExperianConsumerViewClient::Api.new
+      @api = ExperianConsumerView::Api.new
     end
 
     # Looks up 1 or more search items in the ConsumerView API.

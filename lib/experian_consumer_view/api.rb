@@ -1,6 +1,6 @@
 require "jsonclient"
 
-module ExperianConsumerViewClient
+module ExperianConsumerView
   class Api
     BASE_URL = 'https://stg.neartime.experian.co.uk'  # Staging
     #BASE_URL = 'https://neartime.experian.co.uk'      # Prod

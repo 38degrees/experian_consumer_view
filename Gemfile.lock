@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    experian_consumer_view_client (0.1.0)
+    experian_consumer_view (0.1.0)
       activesupport (>= 5.2, < 6.1)
       httpclient (~> 2.8.3)
 
@@ -60,7 +60,7 @@ PLATFORMS
 DEPENDENCIES
   bundler (~> 2.1)
   codecov (>= 0.2)
-  experian_consumer_view_client!
+  experian_consumer_view!
   pry (>= 0.12)
   rake (>= 12.0)
   rspec (~> 3.0)

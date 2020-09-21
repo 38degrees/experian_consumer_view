@@ -1,6 +1,6 @@
-RSpec.describe ExperianConsumerViewClient do
+RSpec.describe ExperianConsumerView do
   it "has a version number" do
-    expect(ExperianConsumerViewClient::VERSION).not_to be nil
+    expect(ExperianConsumerView::VERSION).not_to be nil
   end
 
   it "does something useful" do

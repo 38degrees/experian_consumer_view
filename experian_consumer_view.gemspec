@@ -1,8 +1,8 @@
-require_relative 'lib/experian_consumer_view_client/version'
+require_relative 'lib/experian_consumer_view/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "experian_consumer_view_client"
-  spec.version       = ExperianConsumerViewClient::VERSION
+  spec.name          = "experian_consumer_view"
+  spec.version       = ExperianConsumerView::VERSION
   spec.authors       = ["Andrew Sibley"]
   spec.email         = ["andrew.s@38degrees.org.uk"]
   spec.license       = 'MIT'
