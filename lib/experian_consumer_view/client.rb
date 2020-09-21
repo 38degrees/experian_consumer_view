@@ -3,7 +3,6 @@ require "active_support/cache"
 
 module ExperianConsumerView
   class Client
-
     CACHE_KEY = 'ExperianConsumerView::Client::CachedToken'
 
     # @param user_id [String] the username / email used to authorize use of the ConsumerView API
@@ -33,24 +32,39 @@ module ExperianConsumerView
     #   <tt>{ "PersonA" => { "email" => "person.a@example.com" }, "Postcode1" => { "postcode" => "SW1A 1AA" } }</tt>.
     #   Note that the top-level key is not passed to the ConsumerView API, it is just used for convenience when
     #   returning results.
+    # @param auto_retries [Integer] optional number of times the lookup should be retried if a transient / potentially
+    #   recoverable error occurs. Defaults to 1.
     #
     # @returns [Hash] a hash of identifiers to the results returned by the ConsumerView API. Eg.
     #   <tt><{ "PersonA" => { "pc_mosaic_uk_6_group":"G", "Match":"P" } , "Postcode1" => { "pc_mosaic_uk_6_group":"G", "Match":"PC" }}</tt>.
-    def lookup(search_items:)
+    def lookup(search_items:, auto_retries: 1)
       item_identifiers = search_items.keys
       search_terms = search_items.values
+      attempts = 0
 
-      ordered_results = @api.batch_lookup(
-        user_id: @user_id,
-        token: get_or_refresh_auth_token,
-        client_id: @client_id,
-        asset_id: @asset_id,
-        batched_search_keys: search_terms
-      )
+      begin
+        ordered_results = @api.batch_lookup(
+          user_id: @user_id,
+          token: get_or_refresh_auth_token,
+          client_id: @client_id,
+          asset_id: @asset_id,
+          batched_search_keys: search_terms
+        )
+      rescue ExperianConsumerView::Errors::ApiBadCredentialsError, ExperianConsumerView::Errors::ApiServerRefreshingError => e
+        # Bad Credentials can sometimes be caused by race conditions - eg. one thread / server updating the cached
+        # token while another is querying with the old token. Retrying once should avoid the client throwing
+        # unnecessary errors to the calling code.
+        # Experian docs recommend retrying when a server refresh is in progress, and if that fails, retrying again
+        # in approximately 10 minutes.
+        if attempts < auto_retries
+          attempts += 1
+          retry
+        else
+          raise e
+        end
+      end
 
-      puts "#{ordered_results}"
-
-      # TODO: Check ordered results is the same length as the input hash, otherwise something went wrong...!
+      raise ExperianConsumerView::Errors::ApiResultSizeMismatchError unless ordered_results.size == item_identifiers.size
 
       # Construct a hash of { item_identifier => result_hash }
       Hash[item_identifiers.zip(ordered_results)]
@@ -61,11 +75,13 @@ module ExperianConsumerView
     def get_or_refresh_auth_token
       # ConsumerView auth tokens last for 30 minutes before expiring & becoming invalid.
       # After 29 minutes, the cache entry will expire, and the first process to find the expired entry will refresh it,
-      # while allowing other processes to use the existing value for another 30s. This should alleviate race conditions
-      # in a multi-threaded but single-server environment, but will not solve race conditions in distributed / cloud
-      # environments.
+      # while allowing other processes to use the existing value for another 10s. This should alleviate race conditions,
+      # but will not eliminate them entirely. Note that in a distributed / cloud / multi-server environment, a shared
+      # cache MUST be used. An in-memory store would mean multiple instances logging to the ConsumerView API, and each
+      # login will change the active token, which other servers will not see, leading to frequent authorisation
+      # failures.
       @token_cache.fetch(
-        CACHE_KEY, expires_in: 29.minutes, race_condition_ttl: 30.seconds
+        CACHE_KEY, expires_in: 29.minutes, race_condition_ttl: 10.seconds
       ) do
         @api.get_auth_token(user_id: @user_id, password: @password)
       end
