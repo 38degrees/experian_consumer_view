@@ -5,7 +5,7 @@ module ExperianConsumerView
       attr_reader :code, :response
 
       def initialize(code, response)
-       super
+       super()
        @code = code
        @response = response
       end

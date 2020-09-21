@@ -2,13 +2,15 @@ require "jsonclient"
 
 module ExperianConsumerView
   class Api
-    BASE_URL = 'https://stg.neartime.experian.co.uk'  # Staging
-    #BASE_URL = 'https://neartime.experian.co.uk'      # Prod
+    PRODUCTION_URL = 'https://neartime.experian.co.uk'
+    STAGING_URL = 'https://stg.neartime.experian.co.uk'
+
     LOGIN_PATH = '/overture/login'
     SINGLE_LOOKUP_PATH = '/overture/lookup'
     BATCH_LOOKUP_PATH = '/overture/batch'
 
-    def initialize
+    def initialize(url: PRODUCTION_URL)
+      @base_url = url
       @jsonclient = JSONClient.new
       @jsonclient.receive_timeout = 60 * 5 # 5 mins
     end
@@ -20,7 +22,7 @@ module ExperianConsumerView
     def get_auth_token(user_id:, password:)
       query_params = { 'userid' => user_id, 'password' => password }
 
-      result = @jsonclient.post(BASE_URL + LOGIN_PATH, query_params)
+      result = @jsonclient.post(@base_url + LOGIN_PATH, query_params)
       check_http_result_status(result)
 
       result.body['token']
@@ -51,7 +53,7 @@ module ExperianConsumerView
       }
       query_params.merge!(search_keys)
 
-      result = @jsonclient.post(BASE_URL + SINGLE_LOOKUP_PATH, query_params)
+      result = @jsonclient.post(@base_url + SINGLE_LOOKUP_PATH, query_params)
       check_http_result_status(result)
 
       result.body
@@ -86,7 +88,7 @@ module ExperianConsumerView
         'batch' => batched_search_keys
       }
 
-      result = @jsonclient.post(BASE_URL + BATCH_LOOKUP_PATH, query_params)
+      result = @jsonclient.post(@base_url + BATCH_LOOKUP_PATH, query_params)
       check_http_result_status(result)
 
       JSON.parse(result.body)
@@ -95,33 +97,44 @@ module ExperianConsumerView
     private
 
     def check_http_result_status(result)
+      # TODO: Remove
+      puts "#{result.body.class}"
+      puts "#{result.body}"
+
       return if result.status == HTTP::Status::OK
 
-      # An error occurred - extract the response from the JSON body if we can
+      # An error occurred - attempt to extract the response string from the body if we can
+      # TODO: Is this complex handling necessary? Need to see if all types of error are consistent in the body they return...
       response =
         begin
-          JSON.parse(result.body)['response']
+          if result.body && result.body.is_a?(Hash)
+            result.body['response']
+          elsif result.body && result.body.is_a?(String)
+            JSON.parse(result.body)['response']
+          else
+            ""
+          end
         rescue JSON::ParserError
           ""
         end
 
       case result.status
       when 401
-        raise ExperianConsumerView::Error::ApiBadCredentialsError.new(result.status, response)
+        raise ExperianConsumerView::Errors::ApiBadCredentialsError.new(result.status, response)
       when 404
-        raise ExperianConsumerView::Error::ApiEndpointNotFoundError.new(result.status, response)
+        raise ExperianConsumerView::Errors::ApiEndpointNotFoundError.new(result.status, response)
       when 417
-        raise ExperianConsumerView::Error::ApiIncorrectJsonError.new(result.status, response)
+        raise ExperianConsumerView::Errors::ApiIncorrectJsonError.new(result.status, response)
       when 500
-        raise ExperianConsumerView::Error::ApiServerError.new(result.status, response)
+        raise ExperianConsumerView::Errors::ApiServerError.new(result.status, response)
       when 503
-        raise ExperianConsumerView::Error::ApiServerRefreshingError(result.status, response) if response == 'Internal refresh in progress'
+        raise ExperianConsumerView::Errors::ApiServerRefreshingError(result.status, response) if response == 'Internal refresh in progress'
 
-        raise ExperianConsumerView::Error::ApiServerError.new(result.status, response)
+        raise ExperianConsumerView::Errors::ApiServerError.new(result.status, response)
       when 515
-        raise ExperianConsumerView::Error::ApiHttpVersionNotSupportedError.new(result.status, response)
+        raise ExperianConsumerView::Errors::ApiHttpVersionNotSupportedError.new(result.status, response)
       else
-        raise ExperianConsumerView::Error::ApiUnhandledHttpError.new(result.status, response)
+        raise ExperianConsumerView::Errors::ApiUnhandledHttpError.new(result.status, response)
       end
     end
   end
