@@ -1,13 +1,13 @@
-require "jsonclient"
+require 'jsonclient'
 
 module ExperianConsumerView
   class Api
-    PRODUCTION_URL = 'https://neartime.experian.co.uk'
-    STAGING_URL = 'https://stg.neartime.experian.co.uk'
+    PRODUCTION_URL = 'https://neartime.experian.co.uk'.freeze
+    STAGING_URL = 'https://stg.neartime.experian.co.uk'.freeze
 
-    LOGIN_PATH = '/overture/login'
-    SINGLE_LOOKUP_PATH = '/overture/lookup'
-    BATCH_LOOKUP_PATH = '/overture/batch'
+    LOGIN_PATH = '/overture/login'.freeze
+    SINGLE_LOOKUP_PATH = '/overture/lookup'.freeze
+    BATCH_LOOKUP_PATH = '/overture/batch'.freeze
 
     def initialize(url: PRODUCTION_URL)
       @base_url = url
@@ -98,8 +98,8 @@ module ExperianConsumerView
 
     def check_http_result_status(result)
       # TODO: Remove
-      puts "#{result.body.class}"
-      puts "#{result.body}"
+      puts result.body.class.to_s
+      puts result.body.to_s
 
       return if result.status == HTTP::Status::OK
 
@@ -107,15 +107,15 @@ module ExperianConsumerView
       # TODO: Is this complex handling necessary? Need to see if all types of error are consistent in the body they return...
       response =
         begin
-          if result.body && result.body.is_a?(Hash)
+          if result.body&.is_a?(Hash)
             result.body['response']
-          elsif result.body && result.body.is_a?(String)
+          elsif result.body&.is_a?(String)
             JSON.parse(result.body)['response']
           else
-            ""
+            ''
           end
         rescue JSON::ParserError
-          ""
+          ''
         end
 
       case result.status
@@ -128,7 +128,9 @@ module ExperianConsumerView
       when 500
         raise ExperianConsumerView::Errors::ApiServerError.new(result.status, response)
       when 503
-        raise ExperianConsumerView::Errors::ApiServerRefreshingError(result.status, response) if response == 'Internal refresh in progress'
+        if response == 'Internal refresh in progress'
+          raise ExperianConsumerView::Errors::ApiServerRefreshingError(result.status, response)
+        end
 
         raise ExperianConsumerView::Errors::ApiServerError.new(result.status, response)
       when 515

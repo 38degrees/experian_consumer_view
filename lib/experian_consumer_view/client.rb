@@ -1,9 +1,9 @@
-require "active_support"
-require "active_support/cache"
+require 'active_support'
+require 'active_support/cache'
 
 module ExperianConsumerView
   class Client
-    CACHE_KEY = 'ExperianConsumerView::Client::CachedToken'
+    CACHE_KEY = 'ExperianConsumerView::Client::CachedToken'.freeze
 
     # @param user_id [String] the username / email used to authorize use of the ConsumerView API
     # @param password [String] the password used to authorize use of the ConsumerView API
@@ -64,7 +64,9 @@ module ExperianConsumerView
         end
       end
 
-      raise ExperianConsumerView::Errors::ApiResultSizeMismatchError unless ordered_results.size == item_identifiers.size
+      unless ordered_results.size == item_identifiers.size
+        raise ExperianConsumerView::Errors::ApiResultSizeMismatchError
+      end
 
       # Construct a hash of { item_identifier => result_hash }
       Hash[item_identifiers.zip(ordered_results)]

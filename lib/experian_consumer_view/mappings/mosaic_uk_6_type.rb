@@ -69,7 +69,7 @@ module ExperianConsumerView
         '65' => { api_code: '65', code: 'O65', description: 'Learners & Earners' },
         '66' => { api_code: '66', code: 'O66', description: 'Student Scene' },
         '99' => { api_code: '99', code: 'U', description: 'Unclassified' }
-      }
+      }.freeze
     end
   end
 end
