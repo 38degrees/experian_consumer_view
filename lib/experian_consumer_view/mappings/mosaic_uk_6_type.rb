@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ExperianConsumerView
   module Mappings
     class MosaicUk6Type

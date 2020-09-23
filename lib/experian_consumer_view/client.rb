@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require 'active_support'
 require 'active_support/cache'
 
 module ExperianConsumerView
   class Client
-    CACHE_KEY = 'ExperianConsumerView::Client::CachedToken'.freeze
+    CACHE_KEY = 'ExperianConsumerView::Client::CachedToken'
 
     # @param user_id [String] the username / email used to authorize use of the ConsumerView API
     # @param password [String] the password used to authorize use of the ConsumerView API

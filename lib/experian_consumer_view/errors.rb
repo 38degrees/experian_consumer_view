@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ExperianConsumerView
   module Errors
     # Base helper class for errors caused due to unexpected HTTP responses

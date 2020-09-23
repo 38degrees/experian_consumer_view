@@ -1,13 +1,15 @@
+# frozen_string_literal: true
+
 require 'jsonclient'
 
 module ExperianConsumerView
   class Api
-    PRODUCTION_URL = 'https://neartime.experian.co.uk'.freeze
-    STAGING_URL = 'https://stg.neartime.experian.co.uk'.freeze
+    PRODUCTION_URL = 'https://neartime.experian.co.uk'
+    STAGING_URL = 'https://stg.neartime.experian.co.uk'
 
-    LOGIN_PATH = '/overture/login'.freeze
-    SINGLE_LOOKUP_PATH = '/overture/lookup'.freeze
-    BATCH_LOOKUP_PATH = '/overture/batch'.freeze
+    LOGIN_PATH = '/overture/login'
+    SINGLE_LOOKUP_PATH = '/overture/lookup'
+    BATCH_LOOKUP_PATH = '/overture/batch'
 
     def initialize(url: PRODUCTION_URL)
       @base_url = url
