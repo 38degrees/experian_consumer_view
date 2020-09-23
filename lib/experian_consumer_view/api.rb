@@ -3,6 +3,11 @@
 require 'jsonclient'
 
 module ExperianConsumerView
+  # Low-level class for accessing the Experian ConsumerView API. It is not recommended to use this class directly.
+  # The +ExperianConsumerView::Client+ class is designed to be directly used by applications.
+  #
+  # This class provides low-level access to make specific HTTP calls to the ConsumerView API, such as logging in to get
+  # an authorisation token, and performing lookups of an individual / household / postcode.
   class Api
     PRODUCTION_URL = 'https://neartime.experian.co.uk'
     STAGING_URL = 'https://stg.neartime.experian.co.uk'

@@ -4,6 +4,25 @@ require 'active_support'
 require 'active_support/cache'
 
 module ExperianConsumerView
+  # Top-level wrapper for accessing the ExperianConsumerView API. Once an instance is created with the appropriate
+  # credentials, the +lookup+ method provides the ability to lookup individuals, households, or postcodes in the
+  # ConsumerView API and return all the data your account has access to.
+  #
+  # This class automatically handles logging in to the ConsumerView API, obtaining an authorisation token (which is
+  # valid for approximately 30 minutes), and then looking up the data. The authorisation token is cached so that it's
+  # not necessary to login again for every single lookup request.
+  #
+  # Note that by default the authorisation is cached in-memory using +ActiveSupport::Cache::MemoryStore+. This is
+  # suitable for single-server applications, but is unlikely to be suitable for distributed applications, or those
+  # hosted on cloud infrastructure. A distributed cache, such as +ActiveSupport::Cache::RedisCacheStore+ or
+  # +ActiveSupport::Cache::MemCacheStore+ is recommended for distributed or cloud-hosted applications.
+  #
+  # If an in-memory data-store were used in distributed or cloud-hosted applications, then the multiple servers will be
+  # unaware of each others tokens, and therefore each server would login to the ConsumerView API independently, even if
+  # another server already had a valid token. Logging in to the ConsumerView API multiple times with the same
+  # credentials will revoke prior tokens, meaning other servers will find their cached tokens are invalid the next time
+  # they try a lookup. This will likely lead to a situation where many lookup attempts fail the first time due to the
+  # server in question not having the most up-to-date token.
   class Client
     CACHE_KEY = 'ExperianConsumerView::Client::CachedToken'
 
