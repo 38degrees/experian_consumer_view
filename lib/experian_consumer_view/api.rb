@@ -135,22 +135,20 @@ module ExperianConsumerView
     end
 
     def get_response(result)
-      # TODO: Remove
-      puts result.body.class.to_s
-      puts result.body.to_s
+      # TODO: Temp debugging for convenience
+      # puts result.body.class.to_s
+      # puts result.body.to_s
 
       # TODO: Is this complex handling necessary? Check if all types of error are consistent in the body they return...
-      begin
-        if result.body&.is_a?(Hash)
-          result.body['response']
-        elsif result.body&.is_a?(String)
-          JSON.parse(result.body)['response']
-        else
-          ''
-        end
-      rescue JSON::ParserError
+      if result.body&.is_a?(Hash)
+        result.body['response']
+      elsif result.body&.is_a?(String)
+        JSON.parse(result.body)['response']
+      else
         ''
       end
+    rescue JSON::ParserError
+      ''
     end
   end
 end
