@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
-require 'bundler/setup'
 require 'experian_consumer_view'
+
+require 'bundler/setup'
+require 'webmock/rspec'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
