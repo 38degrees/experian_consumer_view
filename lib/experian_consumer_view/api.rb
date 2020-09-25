@@ -2,7 +2,8 @@
 
 require_relative 'errors'
 
-require 'jsonclient'
+require 'faraday'
+#require 'jsonclient'
 
 module ExperianConsumerView
   # Low-level class for accessing the Experian ConsumerView API. It is not recommended to use this class directly.
@@ -21,9 +22,13 @@ module ExperianConsumerView
     BATCH_LOOKUP_PATH = '/overture/batch'
 
     def initialize(url: PRODUCTION_URL)
-      @base_url = url
-      @jsonclient = JSONClient.new
-      @jsonclient.receive_timeout = 60 * 5 # 5 mins
+      # @base_url = url
+      # @httpclient = JSONClient.new(base_url: url)
+      # @httpclient.receive_timeout = 60 * 5 # 5 mins
+      @httpclient = Faraday.new(
+        url: url,
+        headers: {'Content-Type' => 'application/json', 'Accept' => 'application/json'}
+      )
     end
 
     # Logs in to the Experian ConsumerView API, and gets an authorization token.
@@ -33,10 +38,13 @@ module ExperianConsumerView
     def get_auth_token(user_id:, password:)
       query_params = { 'userid' => user_id, 'password' => password }
 
-      result = @jsonclient.post(@base_url + LOGIN_PATH, query_params)
+      result = @httpclient.post(LOGIN_PATH, query_params.to_json)
       check_http_result_status(result)
 
-      result.body['token']
+      puts result.to_s
+      puts result.body.to_s
+
+      JSON.parse(result.body)['token']
     end
 
     # Looks up demographic data for a single individual / household / postcode.
@@ -64,10 +72,10 @@ module ExperianConsumerView
       }
       query_params.merge!(search_keys)
 
-      result = @jsonclient.post(@base_url + SINGLE_LOOKUP_PATH, query_params)
+      result = @httpclient.post(SINGLE_LOOKUP_PATH, query_params.to_json)
       check_http_result_status(result)
 
-      result.body
+      JSON.parse(result.body)
     end
 
     # Looks up demographic data for a batch of individuals / households / postcodes.
@@ -99,7 +107,7 @@ module ExperianConsumerView
         'batch' => batched_search_keys
       }
 
-      result = @jsonclient.post(@base_url + BATCH_LOOKUP_PATH, query_params)
+      result = @httpclient.post(BATCH_LOOKUP_PATH, query_params.to_json)
       check_http_result_status(result)
 
       JSON.parse(result.body)
@@ -109,7 +117,7 @@ module ExperianConsumerView
 
     # Helper to check the result, and throw an appropriate error if something went wrong
     def check_http_result_status(result)
-      return if result.status == HTTP::Status::OK
+      return if result.status == 200
 
       # An error occurred - attempt to extract the response string from the body if we can
       response = get_response(result)

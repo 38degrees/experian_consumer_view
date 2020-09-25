@@ -71,8 +71,7 @@ module ExperianConsumerView
       item_identifiers = search_items.keys
       search_terms = search_items.values
 
-      token = auth_token # get token outside begin/rescue - don't retry login attempts!
-
+      token = auth_token
       attempts = 0
       begin
         ordered_results = @api.batch_lookup(
@@ -86,10 +85,11 @@ module ExperianConsumerView
         # Bad Credentials can sometimes be caused by race conditions - eg. one thread / server updating the cached
         # token while another is querying with the old token. Retrying once should avoid the client throwing
         # unnecessary errors to the calling code.
-        # Experian docs recommend retrying when a server refresh is in progress, and if that fails, retrying again
+        # Experian docs also recommend retrying when a server refresh is in progress, and if that fails, retrying again
         # in approximately 10 minutes.
         raise e unless attempts < auto_retries
 
+        token = auth_token(force_lookup: true)
         attempts += 1
         retry
       end
@@ -102,7 +102,7 @@ module ExperianConsumerView
 
     private
 
-    def auth_token
+    def auth_token(force_lookup: false)
       # ConsumerView auth tokens last for 30 minutes before expiring & becoming invalid.
       # After 29 minutes, the cache entry will expire, and the first process to find the expired entry will refresh it,
       # while allowing other processes to use the existing value for another 10s. This should alleviate race conditions,
@@ -111,7 +111,7 @@ module ExperianConsumerView
       # login will change the active token, which other servers will not see, leading to frequent authorisation
       # failures.
       @token_cache.fetch(
-        CACHE_KEY, expires_in: 29.minutes, race_condition_ttl: 10.seconds
+        CACHE_KEY, expires_in: 29.minutes, race_condition_ttl: 10.seconds, force: force_lookup
       ) do
         @api.get_auth_token(user_id: @user_id, password: @password)
       end

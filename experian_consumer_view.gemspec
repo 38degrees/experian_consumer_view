@@ -34,7 +34,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'activesupport', ['>= 5.2', '< 6.1']
-  spec.add_dependency 'httpclient', '~> 2.8.3'
+  spec.add_dependency 'faraday', '~> 1.0'
+  #spec.add_dependency 'httpclient', '~> 2.8.3'
 
   spec.add_development_dependency 'bundler', '~> 2.1'
   spec.add_development_dependency 'codecov', '>= 0.2'
@@ -42,5 +43,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake', '>= 12.0'
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'rubocop', '~> 0.91.0'
+  spec.add_development_dependency 'webmock', '~> 3.9'
   spec.add_development_dependency 'yard', '~> 0.9.25'
 end
