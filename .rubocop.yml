@@ -12,12 +12,17 @@
 AllCops:
   NewCops: enable
 
-Metrics/MethodLength:
-  Max: 20 # double the default
-  CountAsOne: ['array', 'hash', 'heredoc']
-
 Metrics/AbcSize:
   Max: 34 # double the default
 
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+    - '*.gemspec'
+
 Metrics/CyclomaticComplexity:
   Max: 14 # double the default
+
+Metrics/MethodLength:
+  Max: 20 # double the default
+  CountAsOne: ['array', 'hash', 'heredoc']
