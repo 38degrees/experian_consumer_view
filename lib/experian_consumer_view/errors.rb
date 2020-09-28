@@ -44,6 +44,9 @@ module ExperianConsumerView
     # Thrown for unhandled HTTP codes.
     class ApiUnhandledHttpError < ApiHttpError; end
 
+    # Thrown when the API is passed a batch which is too big to be given to the API
+    class ApiBatchTooBigError < StandardError; end
+
     # Thrown when the API returns data successfully, but the size of the data returned does not match the size of the
     # query data provided, meaning there is no way to know for sure which result relates to which query string. Such
     # an error either implies a serious issue with the Experian API, or with this code library (or a change to the API

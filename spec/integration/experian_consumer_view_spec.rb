@@ -1,6 +1,11 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
-include ExperianConsumerView::Errors
+LOGIN_URL = 'https://neartime.experian.co.uk/overture/login'
+LOOKUP_URL = 'https://neartime.experian.co.uk/overture/batch'
+
+ERRORS = ExperianConsumerView::Errors
 
 RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
   subject do
@@ -11,9 +16,6 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
       asset_id: asset_id
     )
   end
-
-  let(:login_url) { 'https://neartime.experian.co.uk/overture/login' }
-  let(:lookup_url) { 'https://neartime.experian.co.uk/overture/batch' }
 
   let(:user_id) { 'UserA' }
   let(:password) { 'TopSecret' }
@@ -57,67 +59,105 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
     ].to_json
   end
 
+  let(:expected_result) do
+    {
+      'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+      'Postcode1' => { 'pc_mosaic_uk_6_group' => 'B', 'Match' => 'PC' }
+    }
+  end
+
   context 'Happy path cases' do
-    it 'Can login, get an auth token, and lookup data' do
-      expected_result = {
-        'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
-        'Postcode1' => { 'pc_mosaic_uk_6_group' => 'B', 'Match' => 'PC' }
-      }
+    context 'when API finds matches for all looked up data' do
+      it 'can login, get an auth token, and lookup data' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response)
 
-      login_req = stub_request(:post, login_url).
-        with { |request| request.body == login_query && content_type_json?(request) }.
-        to_return(status: 200, body: login_response)
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 200, body: lookup_response)
 
-      lookup_req = stub_request(:post, lookup_url).
-        with { |request| request.body == lookup_query && content_type_json?(request) }.
-        to_return(status: 200, body: lookup_response)
+        expect(subject.lookup(search_items: search_items)).to eq(expected_result)
 
-      expect(subject.lookup(search_items: search_items)).to eq(expected_result)
+        expect(login_req).to have_been_requested.once
+        expect(lookup_req).to have_been_requested.once
+      end
 
-      expect(login_req).to have_been_requested.once
-      expect(lookup_req).to have_been_requested.once
+      it 'caches the auth token across multiple requests' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response)
+
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 200, body: lookup_response).times(2)
+
+        expect(subject.lookup(search_items: search_items)).to eq(expected_result)
+        expect(subject.lookup(search_items: search_items)).to eq(expected_result)
+
+        expect(login_req).to have_been_requested.once
+        expect(lookup_req).to have_been_requested.twice
+      end
     end
 
-    it 'Caches the auth token across multiple requests' do
-      expected_result = {
-        'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
-        'Postcode1' => { 'pc_mosaic_uk_6_group' => 'B', 'Match' => 'PC' }
-      }
+    context "when API doesn't match some looked up data" do
+      let(:lookup_response) do
+        [
+          { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+          {}
+        ].to_json
+      end
 
-      login_req = stub_request(:post, login_url).
-        with { |request| request.body == login_query && content_type_json?(request) }.
-        to_return(status: 200, body: login_response)
+      let(:expected_result) do
+        {
+          'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+          'Postcode1' => {}
+        }
+      end
 
-      lookup_req = stub_request(:post, lookup_url).
-        with { |request| request.body == lookup_query && content_type_json?(request) }.
-        to_return(status: 200, body: lookup_response).
-        times(2)
+      it 'returns an empty hash for the unmatched data' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response)
 
-      expect(subject.lookup(search_items: search_items)).to eq(expected_result)
-      expect(subject.lookup(search_items: search_items)).to eq(expected_result)
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 200, body: lookup_response)
 
-      expect(login_req).to have_been_requested.once
-      expect(lookup_req).to have_been_requested.twice
+        expect(subject.lookup(search_items: search_items)).to eq(expected_result)
+
+        expect(login_req).to have_been_requested.once
+        expect(lookup_req).to have_been_requested.once
+      end
+    end
+
+    context "when API doesn't match any looked up data" do
+      let(:lookup_response) do
+        [{}, {}].to_json
+      end
+
+      let(:expected_result) do
+        { 'PersonA' => {}, 'Postcode1' => {} }
+      end
+
+      it 'returns an empty hash for the unmatched data' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response)
+
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 200, body: lookup_response)
+
+        expect(subject.lookup(search_items: search_items)).to eq(expected_result)
+
+        expect(login_req).to have_been_requested.once
+        expect(lookup_req).to have_been_requested.once
+      end
     end
   end
 
   context 'Error cases' do
-    context 'When lookup returns 401 on the first attempt' do
-      it 'Retries the lookup, getting a new token on the retry' do
-        expected_result = {
-          'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
-          'Postcode1' => { 'pc_mosaic_uk_6_group' => 'B', 'Match' => 'PC' }
-        }
+    context 'when lookup returns 401 on the first attempt' do
+      it 'retries the lookup, getting a new token on the retry' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response).times(2)
 
-        login_req = stub_request(:post, login_url).
-          with { |request| request.body == login_query && content_type_json?(request) }.
-          to_return(status: 200, body: login_response).
-          times(2)
-
-        lookup_req = stub_request(:post, lookup_url).
-          with { |request| request.body == lookup_query && content_type_json?(request) }.
-          to_return(status: 401).then.
-          to_return(status: 200, body: lookup_response)
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 401).then
+                     .to_return(status: 200, body: lookup_response)
 
         expect(subject.lookup(search_items: search_items)).to eq(expected_result)
 
@@ -126,34 +166,126 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
       end
     end
 
-    context 'When lookup returns 401 on multiple attempts' do
-      it 'Retries the lookup only once, getting a new token on the retry, then raises an error' do
-        expected_result = {
-          'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
-          'Postcode1' => { 'pc_mosaic_uk_6_group' => 'B', 'Match' => 'PC' }
-        }
+    context 'when lookup returns 401 on multiple attempts' do
+      it 'retries the lookup only once, getting a new token on the retry, then raises an error' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response).times(2)
 
-        login_req = stub_request(:post, login_url).
-          with { |request| request.body == login_query && content_type_json?(request) }.
-          to_return(status: 200, body: login_response).
-          times(2)
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 401).times(2)
 
-        lookup_req = stub_request(:post, lookup_url).
-          with { |request| request.body == lookup_query && content_type_json?(request) }.
-          to_return(status: 401).
-          times(2)
-
-        expect { subject.lookup(search_items: search_items) }.to raise_error(ApiBadCredentialsError)
+        expect { subject.lookup(search_items: search_items) }.to raise_error(ERRORS::ApiBadCredentialsError)
 
         expect(login_req).to have_been_requested.twice
         expect(lookup_req).to have_been_requested.twice
+      end
+    end
+
+    context 'when lookup returns 500' do
+      it 'does not retry lookup, and raises an error' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response)
+
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 500)
+
+        expect { subject.lookup(search_items: search_items) }.to raise_error(ERRORS::ApiServerError)
+
+        expect(login_req).to have_been_requested.once
+        expect(lookup_req).to have_been_requested.once
+      end
+    end
+
+    context 'when lookup returns an unhandled HTTP code' do
+      it 'does not retry lookup, and raises an error' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response)
+
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 501)
+
+        expect { subject.lookup(search_items: search_items) }.to raise_error(ERRORS::ApiUnhandledHttpError)
+
+        expect(login_req).to have_been_requested.once
+        expect(lookup_req).to have_been_requested.once
+      end
+    end
+
+    context 'when lookup is passed too many records' do
+      let(:search_items) do
+        search_items = {}
+        5001.times { |i| search_items["item#{i}"] = { 'postcode' => SecureRandom.hex(2) } }
+        search_items
+      end
+
+      it 'raises an ApiBatchTooBigError' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response)
+
+        expect { subject.lookup(search_items: search_items) }.to raise_error(ERRORS::ApiBatchTooBigError)
+
+        expect(login_req).to have_been_requested.once
+      end
+    end
+
+    context 'when lookup returns the wrong number of records' do
+      context 'when lookup returns too few records' do
+        let(:lookup_response) do
+          [{ 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' }].to_json
+        end
+
+        it 'raises an ApiResultSizeMismatchError' do
+          login_req = stub_login_request(request_body: login_query)
+                      .to_return(status: 200, body: login_response)
+
+          lookup_req = stub_lookup_request(request_body: lookup_query)
+                       .to_return(status: 200, body: lookup_response)
+
+          expect { subject.lookup(search_items: search_items) }.to raise_error(ERRORS::ApiResultSizeMismatchError)
+
+          expect(login_req).to have_been_requested.once
+          expect(lookup_req).to have_been_requested.once
+        end
+      end
+
+      context 'when lookup returns too many records' do
+        let(:lookup_response) do
+          [
+            { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+            { 'pc_mosaic_uk_6_group' => 'B', 'Match' => 'PC' },
+            {}
+          ].to_json
+        end
+
+        it 'raises an ApiResultSizeMismatchError' do
+          login_req = stub_login_request(request_body: login_query)
+                      .to_return(status: 200, body: login_response)
+
+          lookup_req = stub_lookup_request(request_body: lookup_query)
+                       .to_return(status: 200, body: lookup_response)
+
+          expect { subject.lookup(search_items: search_items) }.to raise_error(ERRORS::ApiResultSizeMismatchError)
+
+          expect(login_req).to have_been_requested.once
+          expect(lookup_req).to have_been_requested.once
+        end
       end
     end
   end
 
   # HELPERS
 
+  def stub_login_request(request_body:)
+    stub_request(:post, LOGIN_URL)
+      .with { |request| request.body == request_body && content_type_json?(request) }
+  end
+
+  def stub_lookup_request(request_body:)
+    stub_request(:post, LOOKUP_URL)
+      .with { |request| request.body == request_body && content_type_json?(request) }
+  end
+
   def content_type_json?(request)
-    request.headers['Content-Type'] =~ /application\/json/
+    request.headers['Content-Type'] =~ %r{application/json}
   end
 end

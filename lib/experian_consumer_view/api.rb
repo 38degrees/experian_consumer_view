@@ -3,7 +3,7 @@
 require_relative 'errors'
 
 require 'faraday'
-#require 'jsonclient'
+require 'json'
 
 module ExperianConsumerView
   # Low-level class for accessing the Experian ConsumerView API. It is not recommended to use this class directly.
@@ -21,13 +21,12 @@ module ExperianConsumerView
     SINGLE_LOOKUP_PATH = '/overture/lookup'
     BATCH_LOOKUP_PATH = '/overture/batch'
 
+    MAX_BATCH_SIZE = 5_000
+
     def initialize(url: PRODUCTION_URL)
-      # @base_url = url
-      # @httpclient = JSONClient.new(base_url: url)
-      # @httpclient.receive_timeout = 60 * 5 # 5 mins
       @httpclient = Faraday.new(
         url: url,
-        headers: {'Content-Type' => 'application/json', 'Accept' => 'application/json'}
+        headers: { 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
       )
     end
 
@@ -40,9 +39,6 @@ module ExperianConsumerView
 
       result = @httpclient.post(LOGIN_PATH, query_params.to_json)
       check_http_result_status(result)
-
-      puts result.to_s
-      puts result.body.to_s
 
       JSON.parse(result.body)['token']
     end
@@ -97,7 +93,7 @@ module ExperianConsumerView
     #   supplied search array - ie. element 0 of the results array contains the hash of demographic data for the
     #   individual / household / postcode supplied in position 0 of the batch of search keys.
     def batch_lookup(user_id:, token:, client_id:, asset_id:, batched_search_keys:)
-      # TODO: Throw error if batched_search_keys has > 5000 elements
+      raise ApiBatchTooBigError if batched_search_keys.length > MAX_BATCH_SIZE
 
       query_params = {
         'ssoId' => user_id,
