@@ -23,8 +23,14 @@ Or install it yourself as:
 ### Basic example
 
 ```
-# Create the client - Experian will send your user_id, password, client_id, and asset_id when you purchase a license
-client = ExperianConsumerView::Client.new(user_id: 'YOUR_USER_ID', password: 'YOUR_PASSWORD', client_id: 'YOUR_CLIENT_ID', asset_id: 'YOUR_ASSET_ID')
+# Create the client
+# Experian will send your user_id, password, client_id, & asset_id when you purchase a license
+client = ExperianConsumerView::Client.new(
+  user_id: 'YOUR_USER_ID',
+  password: 'YOUR_PASSWORD',
+  client_id: 'YOUR_CLIENT_ID',
+  asset_id: 'YOUR_ASSET_ID'
+)
 
 # Lookup a single item from the API:
 result = client.lookup( search_items: { "Item" => { "postcode" => "SW1A 0AA" } } )
