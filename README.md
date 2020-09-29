@@ -22,7 +22,7 @@ Or install it yourself as:
 
 ### Basic example
 
-```
+```ruby
 # Create the client
 # Experian will send your user_id, password, client_id, & asset_id when you purchase a license
 client = ExperianConsumerView::Client.new(
