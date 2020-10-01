@@ -52,5 +52,8 @@ module ExperianConsumerView
     # an error either implies a serious issue with the Experian API, or with this code library (or a change to the API
     # contract).
     class ApiResultSizeMismatchError < StandardError; end
+
+    # Thrown when the API returns a value for an attribute which is unrecognised and therefore can't be transformed
+    class AttributeValueUnrecognisedError < StandardError; end
   end
 end

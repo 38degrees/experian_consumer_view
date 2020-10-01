@@ -30,6 +30,8 @@ module ExperianConsumerView
 
     CACHE_KEY = 'ExperianConsumerView::Client::CachedToken'
 
+    attr_writer :result_transformer
+
     # @param user_id [String] the username / email used to authorize use of the ConsumerView API
     # @param password [String] the password used to authorize use of the ConsumerView API
     # @param client_id [String] your 5-digit Experian client ID
@@ -38,12 +40,13 @@ module ExperianConsumerView
     #   cache is provided, a default in-memory cache is used, however such a cache is not suitable
     #   for distributed or cloud environments, and will likely result in frequently invalidating
     #   the Experian ConsumerView authorization token.
-    def initialize(user_id:, password:, client_id:, asset_id:, token_cache: nil)
+    def initialize(user_id:, password:, client_id:, asset_id:, token_cache: nil, use_default_result_transformer: true)
       @user_id = user_id
       @password = password
       @client_id = client_id
       @asset_id = asset_id
       @token_cache = token_cache || ActiveSupport::Cache::MemoryStore.new
+      @result_transformer = (use_default_result_transformer ? ExperianConsumerView::ResultTransformer.default : nil)
       @api = ExperianConsumerView::Api.new
     end
 
@@ -68,8 +71,8 @@ module ExperianConsumerView
     #   }
     #   </tt>
     def lookup(search_items:, auto_retries: 1)
-      item_identifiers = search_items.keys
-      search_terms = search_items.values
+      ordered_identifiers = search_items.keys
+      ordered_terms = search_items.values
 
       token = auth_token
       attempts = 0
@@ -79,7 +82,7 @@ module ExperianConsumerView
           token: token,
           client_id: @client_id,
           asset_id: @asset_id,
-          batched_search_keys: search_terms
+          batched_search_keys: ordered_terms
         )
       rescue ApiBadCredentialsError, ApiServerRefreshingError => e
         # Bad Credentials can sometimes be caused by race conditions - eg. one thread / server updating the cached
@@ -94,10 +97,7 @@ module ExperianConsumerView
         retry
       end
 
-      raise ApiResultSizeMismatchError unless ordered_results.size == item_identifiers.size
-
-      # Construct a hash of { item_identifier => result_hash }
-      Hash[item_identifiers.zip(ordered_results)]
+      results_hash(identifiers: ordered_identifiers, results: ordered_results)
     end
 
     private
@@ -115,6 +115,20 @@ module ExperianConsumerView
       ) do
         @api.get_auth_token(user_id: @user_id, password: @password)
       end
+    end
+
+    def results_hash(identifiers:, results:)
+      raise ApiResultSizeMismatchError unless results.size == identifiers.size
+
+      # Construct a hash of { identifier => result_hash }
+      # Hash[identifiers.zip(results)]
+
+      results_hash = {}
+      results.each_with_index do |single_result, i|
+        results_hash[identifiers[i]] = @result_transformer.transform(single_result)
+      end
+
+      results_hash
     end
   end
 end
