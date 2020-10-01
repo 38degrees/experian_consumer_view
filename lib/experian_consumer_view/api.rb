@@ -21,7 +21,7 @@ module ExperianConsumerView
     SINGLE_LOOKUP_PATH = '/overture/lookup'
     BATCH_LOOKUP_PATH = '/overture/batch'
 
-    def initialize(url: PRODUCTION_URL)
+    def initialize(url: STAGING_URL)
       @httpclient = Faraday.new(
         url: url,
         headers: { 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
