@@ -21,8 +21,6 @@ module ExperianConsumerView
     SINGLE_LOOKUP_PATH = '/overture/lookup'
     BATCH_LOOKUP_PATH = '/overture/batch'
 
-    MAX_BATCH_SIZE = 5_000
-
     def initialize(url: PRODUCTION_URL)
       @httpclient = Faraday.new(
         url: url,
@@ -93,7 +91,7 @@ module ExperianConsumerView
     #   supplied search array - ie. element 0 of the results array contains the hash of demographic data for the
     #   individual / household / postcode supplied in position 0 of the batch of search keys.
     def batch_lookup(user_id:, token:, client_id:, asset_id:, batched_search_keys:)
-      raise ApiBatchTooBigError if batched_search_keys.length > MAX_BATCH_SIZE
+      raise ApiBatchTooBigError if batched_search_keys.length > ExperianConsumerView::MAX_LOOKUP_BATCH_SIZE
 
       query_params = {
         'ssoId' => user_id,
