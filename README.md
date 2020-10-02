@@ -206,6 +206,10 @@ client = ExperianConsumerView::Client.new(
   asset_id: 'YOUR_ASSET_ID',
   options: { result_transformer: ExperianConsumerView::Transformers::NoOpTransformer.new }
 )
+
+result = client.lookup(search_items: { "MyPostcode" => { "postcode" => "SW1A 0AA" } })
+# result will be something like:
+# { "MyPostcode" => { "pc_mosaic_uk_6_group" => "A", "pc_mosaic_uk_6_type" => "03", "Match" => "PC" } }
 ```
 
 Note that the results will still be parsed from a JSON String into a Ruby Hash, which will be keyed on the search item keys. If you want the _completely_ raw API results, you may use the `ExperianConsumerView::Api` class directly.
@@ -247,6 +251,17 @@ client = ExperianConsumerView::Client.new(
   asset_id: 'YOUR_ASSET_ID',
   options: { result_transformer: my_result_transformer }
 )
+
+result = client.lookup(search_items: { "PersonA" => { "email" => "example@example.com" } })
+# result will be something like this (assuming your license gives access to "p_head_of_household"):
+# {
+#   "PersonA" => {
+#     "p_head_of_household" => 'Head of household',
+#     "pc_mosaic_uk_6_group" => 'G',
+#     "pc_mosaic_uk_6_type" => '28',
+#     "Match" => 'P'
+#   }
+# }
 ```
 
 #### Using a completely custom result transformer
@@ -262,9 +277,9 @@ class CustomResultTranslator
   # Exact attributes will depend on the Experian license, but input will be something like this...
   # { "pc_mosaic_uk_6_group" => "A", "pc_mosaic_uk_6_type" => "02", "Match" => "PC" }
   def transform(result_hash)
-    # transform the keys from Strings into symbols, and discard the Match attribute
     new_hash = {}
-    result_hash.each { |k,v| new_hash[k.to_sym] = v unless k == "Match" }
+    # Discard the Match attribute, then transform keys from Strings into symbols
+    result_hash.select { |k| k != 'Match' }.each { |k,v| new_hash[k.to_sym] = v }
     new_hash
   end
 end
@@ -276,6 +291,10 @@ client = ExperianConsumerView::Client.new(
   asset_id: 'YOUR_ASSET_ID',
   options: { result_transformer: CustomResultTranslator.new }
 )
+
+result = client.lookup(search_items: { "MyPostcode" => { "postcode" => "SW1A 0AA" } })
+# result will be something like:
+# { "MyPostcode" => { pc_mosaic_uk_6_group: "A", pc_mosaic_uk_6_type: "03" } }
 ```
 
 ## License
