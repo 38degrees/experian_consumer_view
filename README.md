@@ -222,7 +222,7 @@ Each attribute transformer must provide an `attribute_name` method, and a `trans
 
 New attribute transformers can be easily created by extending `ExperianConsumerView::Transformers::Attributes::Base`, but this is not required as long as the necessary methods are implemented.
 
-An example of using a custom attribute transformer:
+An example of creating & using a custom attribute transformer:
 
 ```ruby
 class CustomAttributeTransformer
