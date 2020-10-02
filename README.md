@@ -33,7 +33,7 @@ client = ExperianConsumerView::Client.new(
 )
 
 # Lookup a single item from the API:
-result = client.lookup( search_items: { "MyPostcode" => { "postcode" => "SW1A 0AA" } } )
+result = client.lookup(search_items: { "MyPostcode" => { "postcode" => "SW1A 0AA" } })
 # result will be something like:
 # {
 #   "MyPostcode" => {
@@ -43,23 +43,26 @@ result = client.lookup( search_items: { "MyPostcode" => { "postcode" => "SW1A 0A
 # }
 
 # Lookup a batch of items from the API:
-batch_result = client.lookup( search_items: {
+batch_result = client.lookup(search_items: {
   "Postcode1" => { "postcode" => "SW1A 0AA" },
   "Address2" => { "addressline" => "10 Downing Street", "postcode" => "SW1A 2AA" },
   "Person3" => { "email" => "example@example.com" }
-} )
+})
 # batch_result will be something like:
 # {
 #   "Postcode1" => {
 #     "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+#     "pc_mosaic_uk_6_type" => { api_code: '03', type: 'A03', description: 'Penthouse Chic' },
 #     "Match" => { api_code: 'PC', match_level: 'postcode' }
 #   },
 #   "Address2" => {
-#     "pc_mosaic_uk_6_group" => { api_code: 'B', group: 'B', description: 'Prestige Positions' },
+#     "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+#     "pc_mosaic_uk_6_type" => { api_code: '02', type: 'A02', description: 'Uptown Elite' },
 #     "Match" => { api_code: 'H', match_level: 'household' }
 #   },
 #   "Person3" => {
 #     "pc_mosaic_uk_6_group" => { api_code: 'O', group: 'O', description: 'Rental Hubs' },
+#     "pc_mosaic_uk_6_type" => { api_code: '66', type: 'O66', description: 'Student Scene' },
 #     "Match" => { api_code: 'P', match_level: 'person' }
 #   }
 # }
@@ -67,53 +70,76 @@ batch_result = client.lookup( search_items: {
 
 ### Understanding what to pass to the lookup method
 
-Calls to `lookup` require the `search_items` named parameter - this is a hash of items to lookup in the API.
+Calls to `lookup` require the `search_items` named parameter - this is a hash of items to lookup in the API. Eg. as per the example above:
 
-The keys to this hash are arbitrary names you assign to the items, for example they could be the ID of a postcode or person in your application database. These are simply used to key the results which are returned to you.
+```ruby
+client.lookup(search_items: {
+  "Postcode1" => { "postcode" => "SW1A 0AA" },
+  "Address2" => { "addressline" => "10 Downing Street", "postcode" => "SW1A 2AA" },
+  "Person3" => { "email" => "example@example.com" }
+})
+```
 
-The values of this hash are the items to search for. The ConsumerView API allows searching for demographic data at various levels, such as postcode, household, or individual. Each value in the `search_tems` hash must itself be a hash, as you can see in the examples above, and the keys in these hashes must be a valid combination of search keys the ConsumerView API supports. Eg:
+The keys are arbitrary names you assign to each search item for reference. For example they could be the ID of a postcode or person in your application database. The example above uses "Postcode1", "Address2", etc.
 
-- Providing just a `postcode` key would search for data at the postcode level.
-- Providing an `addressline` and a `postcode` key would search for data at the household level.
-- Providing an `email` key would search for data at the person level.
+The values are the items you wish to search for in the API, in order to get demographic data about them. The ConsumerView API allows searching for demographic data at various levels, such as postcode, household, or an individual person. Each value must itself be a hash, as you can see in the examples above. They must contain a valid combination of search keys which the ConsumerView API supports. Eg:
+
+- Providing just a `postcode` would search for data at the postcode level.
+- Providing an `addressline` and a `postcode` would search for data at the household level.
+- Providing an `email` would search for data at the person level.
 
 Refer to the ConsumerView API Developer Guide for all valid combinations of search keys. Note that these may change over time as the ConsumerView API changes.  
 
 ### Understanding what is returned from the lookup method
 
-Each successful call to `lookup` will return a hash containing the keys provided in the `search_items` hash input parameter, as well as the results returned by the ConsumerView API for that item.
-
-For example, as per the basic example above, if you provide the keys "Postcode1", "Address2" & "Person3" in the `search_items` hash, then these are also used as the keys in the result hash.
-
-For each search item, there will be a hash containing all the data returned by the ConsumerView API for that search item. Your license with Experian determines the attributes the ConsumerView API will return.
-
-By default, the result hash for each search item will contain the name for each attribute exactly as it is returned by the ConsumerView API, and either the raw value returned by the ConsumerView API for that attribute, or a transformed value if a transformer has been written for that attribute.
+Each successful call to `lookup` will return a hash containing the same keys as were provided in the `search_items` argument, as well as the results returned by the ConsumerView API for each search item.
 
 For example:
 
 ```ruby
+client.lookup(search_items: {
+  "Postcode1" => { "postcode" => "SW1A 0AA" },
+  "Address2" => { "addressline" => "10 Downing Street", "postcode" => "SW1A 2AA" },
+  "Person3" => { "email" => "example@example.com" }
+})
+
+# Outputs something like:
 {
   "Postcode1" => {
     "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+    "pc_mosaic_uk_6_type" => { api_code: '03', type: 'A03', description: 'Penthouse Chic' },
     "Match" => { api_code: 'PC', match_level: 'postcode' }
   },
   "Address2" => {
-    "pc_mosaic_uk_6_group" => { api_code: 'B', group: 'B', description: 'Prestige Positions' },
+    "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+    "pc_mosaic_uk_6_type" => { api_code: '02', type: 'A02', description: 'Uptown Elite' },
     "Match" => { api_code: 'H', match_level: 'household' }
   },
   "Person3" => {
     "pc_mosaic_uk_6_group" => { api_code: 'O', group: 'O', description: 'Rental Hubs' },
+    "pc_mosaic_uk_6_type" => { api_code: '66', type: 'O66', description: 'Student Scene' },
     "Match" => { api_code: 'P', match_level: 'person' }
   }
 }
 ```
 
-Three search items were provided, and all 3 were matched successfully. For each search item, the ConsumerView API returned the `pc_mosaic_uk_6_group` and the `Match` attributes. The raw values for these were transformed from single value strings into richer hashes containing the description of what the API values actually mean. The `Postcode1` search item had raw API values of `A` for the `pc_mosaic_uk_6_group` and `PC` for `Match` - these values may not be particularly instructive without referring to the ConsumerView API documentation, but here they have been automatically mapped to richer hash objects that tell us that Mosiac Group `A` is the "City Prosperity" demograhic, and a Match of `PC` means a match at the postcode level.
+In this example, the keys "Postcode1", "Address2" & "Person3" were provided in the `search_items`, so these are also be used as the keys in the result hash.
 
+Each search item has a hash containing all the data returned by the ConsumerView API for that search item. For example, here we can see each search item has the mosaic group & type, as well as the match level.
 
-Note that only some fields are automatically transformed into richer hashes - see the [`Transformers::Attributes` classes](lib/experian_consumer_view/transformers/attributes) to see which attributes are transformed and how.
+If a search item is not successfully looked up in the Experian API, that search item will have an empty hash.
 
-Other attributes will be returned un transformed, using the raw values returned from the API. Refer to the ConsumerView API Variables and Propensities Reference Guide for details on all available variables and the values the ConsumerView API will return for each variable.
+Note that Your license with Experian will determine the exact attributes the ConsumerView API will return, and you should refer to the ConsumerView API Variables and Propensities Reference Guide for details on all available variables and their possible values.
+
+#### Mapping attributes
+
+By default, some fields are automatically transformed into richer hashes.
+
+In the example above, the ConsumerView API returned the `pc_mosaic_uk_6_group`, `pc_mosaic_uk_6_type`, and `Match` attributes for the "Postcode1" search item. The raw values returned by the API would have been `A`, `03`, and `PC` respectively, which is not very informative. Instead, they have been automatically transformed into richer hashes containing more meaningful information - eg. we can see the mosaic group `A` means "City Prosperity", and the mosaic type `03` means "Penthouse Chic".
+
+See the [`Transformers::Attributes` classes](lib/experian_consumer_view/transformers/attributes) to see exactly which attributes are transformed, and how.
+
+Attributes without transformers will still be returned, but they will just have the raw value from the API.
 
 _You can also apply custom transformations to the data returned by the ConsumerView API, in order to automatically transform the data into a richer or more useable format for consumption by your application. This is described further in the advanced useage section of this documentation._
 
