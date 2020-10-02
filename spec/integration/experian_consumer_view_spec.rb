@@ -21,6 +21,7 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
   let(:password) { 'TopSecret' }
   let(:client_id) { '12345' }
   let(:asset_id) { 'Asset1' }
+
   let(:auth_token) { '123-456-789' }
 
   let(:login_query) do
@@ -55,14 +56,20 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
   let(:lookup_response) do
     [
       { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
-      { 'pc_mosaic_uk_6_group' => 'B', 'Match' => 'PC' }
+      { 'pc_mosaic_uk_6_type' => '66', 'Match' => 'PC' }
     ].to_json
   end
 
   let(:expected_result) do
     {
-      'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
-      'Postcode1' => { 'pc_mosaic_uk_6_group' => 'B', 'Match' => 'PC' }
+      'PersonA' => {
+        'pc_mosaic_uk_6_group' => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+        'Match' => { api_code: 'P', match_level: 'person' }
+      },
+      'Postcode1' => {
+        'pc_mosaic_uk_6_type' => { api_code: '66', type: 'O66', description: 'Student Scene' },
+        'Match' => { api_code: 'PC', match_level: 'postcode' }
+      }
     }
   end
 
@@ -106,7 +113,10 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
 
       let(:expected_result) do
         {
-          'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+          'PersonA' => {
+            'pc_mosaic_uk_6_group' => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+            'Match' => { api_code: 'P', match_level: 'person' }
+          },
           'Postcode1' => {}
         }
       end
@@ -269,6 +279,92 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
           expect(login_req).to have_been_requested.once
           expect(lookup_req).to have_been_requested.once
         end
+      end
+    end
+  end
+
+  context 'when using the no-op transformer' do
+    subject do
+      ExperianConsumerView::Client.new(
+        user_id: user_id,
+        password: password,
+        client_id: client_id,
+        asset_id: asset_id,
+        options: { result_transformer: ExperianConsumerView::Transformers::NoOpTransformer.new }
+      )
+    end
+
+    context 'when API finds matches for all looked up data' do
+      let(:expected_result) do
+        {
+          'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+          'Postcode1' => { 'pc_mosaic_uk_6_type' => '66', 'Match' => 'PC' }
+        }
+      end
+
+      it 'can login, get an auth token, and lookup data' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response)
+
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 200, body: lookup_response)
+
+        expect(subject.lookup(search_items: search_items)).to eq(expected_result)
+
+        expect(login_req).to have_been_requested.once
+        expect(lookup_req).to have_been_requested.once
+      end
+    end
+
+    context "when API doesn't match some looked up data" do
+      let(:lookup_response) do
+        [
+          { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+          {}
+        ].to_json
+      end
+
+      let(:expected_result) do
+        {
+          'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+          'Postcode1' => {}
+        }
+      end
+
+      it 'returns an empty hash for the unmatched data' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response)
+
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 200, body: lookup_response)
+
+        expect(subject.lookup(search_items: search_items)).to eq(expected_result)
+
+        expect(login_req).to have_been_requested.once
+        expect(lookup_req).to have_been_requested.once
+      end
+    end
+
+    context "when API doesn't match any looked up data" do
+      let(:lookup_response) do
+        [{}, {}].to_json
+      end
+
+      let(:expected_result) do
+        { 'PersonA' => {}, 'Postcode1' => {} }
+      end
+
+      it 'returns an empty hash for the unmatched data' do
+        login_req = stub_login_request(request_body: login_query)
+                    .to_return(status: 200, body: login_response)
+
+        lookup_req = stub_lookup_request(request_body: lookup_query)
+                     .to_return(status: 200, body: lookup_response)
+
+        expect(subject.lookup(search_items: search_items)).to eq(expected_result)
+
+        expect(login_req).to have_been_requested.once
+        expect(lookup_req).to have_been_requested.once
       end
     end
   end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'errors'
+require_relative 'transformers/result_transformer'
 
 require 'active_support'
 require 'active_support/cache'
@@ -36,18 +37,27 @@ module ExperianConsumerView
     # @param password [String] the password used to authorize use of the ConsumerView API
     # @param client_id [String] your 5-digit Experian client ID
     # @param asset_id [String] your 6-character Experian asset ID
-    # @param token_cache [ActiveSupport::Cache] optional cache to store login tokens. If no cache
-    #   cache is provided, a default in-memory cache is used, however such a cache is not suitable
-    #   for distributed or cloud environments, and will likely result in frequently invalidating
-    #   the Experian ConsumerView authorization token.
-    def initialize(user_id:, password:, client_id:, asset_id:, token_cache: nil, use_default_result_transformer: true)
+    # @param options [Hash] a hash of advanced options for configuring the client
+    #
+    # @option options [ActiveSupport::Cache] :token_cache optional cache to store login tokens. If no cache is provided,
+    #   a default in-memory cache is used, however such a cache is not suitable for distributed or cloud environments,
+    #   and will likely result in frequently invalidating the Experian ConsumerView authorization token.
+    # @option options [#transform] :result_transformer optional object whose +transform+ method accepts a hash
+    #   containing the results returned by the ConsumerView API for a single individual, household or postcode, and
+    #   transforms this hash into the desired output. By default, an instance of +ResultTransformer+ is used, which will
+    #   transform some common attributes returned by the ConsumerView API into hashes with richer details than returned
+    #   by the raw API.
+    # @option options [String] :api_base_url optional base URL to make ConsumerView API calls against. By default, uses
+    #   the Experian production ConsumerView server.
+    def initialize(user_id:, password:, client_id:, asset_id:, options: {})
       @user_id = user_id
       @password = password
       @client_id = client_id
       @asset_id = asset_id
-      @token_cache = token_cache || ActiveSupport::Cache::MemoryStore.new
-      @result_transformer = (use_default_result_transformer ? ExperianConsumerView::ResultTransformer.default : nil)
-      @api = ExperianConsumerView::Api.new
+
+      @token_cache = options[:token_cache] || default_token_cache
+      @result_transformer = options[:result_transformer] || default_result_transformer
+      @api = ExperianConsumerView::Api.new(url: options[:api_base_url])
     end
 
     # Looks up 1 or more search items in the ConsumerView API.
@@ -125,10 +135,18 @@ module ExperianConsumerView
 
       results_hash = {}
       results.each_with_index do |single_result, i|
-        results_hash[identifiers[i]] = @result_transformer.transform(single_result)
+        results_hash[identifiers[i]] = @result_transformer.transform(result_hash: single_result)
       end
 
       results_hash
+    end
+
+    def default_token_cache
+      ActiveSupport::Cache::MemoryStore.new
+    end
+
+    def default_result_transformer
+      ExperianConsumerView::Transformers::ResultTransformer.default
     end
   end
 end

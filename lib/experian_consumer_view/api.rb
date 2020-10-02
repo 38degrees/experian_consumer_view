@@ -21,9 +21,11 @@ module ExperianConsumerView
     SINGLE_LOOKUP_PATH = '/overture/lookup'
     BATCH_LOOKUP_PATH = '/overture/batch'
 
-    def initialize(url: STAGING_URL)
+    # @param url [String] optional base URL for the API wrapper to connect to. Defaults to the Experian ConsumerView
+    #   production server.
+    def initialize(url: nil)
       @httpclient = Faraday.new(
-        url: url,
+        url: url || PRODUCTION_URL,
         headers: { 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
       )
     end

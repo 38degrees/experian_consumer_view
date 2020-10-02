@@ -4,9 +4,12 @@
 # ([A-Z0-9]+) ([A-Z0-9]+) (.*)$
 # '$1' => { api_code: '$1', type: '$2', description: '$3' },
 
+require_relative 'base'
+
 module ExperianConsumerView
   module Transformers
     module Attributes
+      # An Attribute Transformer to tranform the ConsumerView 'pc_mosaic_uk_6_type' field
       class MosaicUk6Type
         extend ExperianConsumerView::Transformers::Attributes::Base
 
