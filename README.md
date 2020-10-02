@@ -33,20 +33,35 @@ client = ExperianConsumerView::Client.new(
 )
 
 # Lookup a single item from the API:
-result = client.lookup( search_items: { "Item" => { "postcode" => "SW1A 0AA" } } )
-# result will be something like: { "Item" => { "pc_mosaic_uk_6_group" => "A", "Match" => "PC" }
+result = client.lookup( search_items: { "MyPostcode" => { "postcode" => "SW1A 0AA" } } )
+# result will be something like:
+# {
+#   "MyPostcode" => {
+#     "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+#     "Match" => { api_code: 'PC', match_level: 'postcode' }
+#   }
+# }
 
 # Lookup a batch of items from the API:
 batch_result = client.lookup( search_items: {
-  "Item1" => { "postcode" => "SW1A 0AA" },
-  "Item2" => { "addressline" => "10 Downing Street", "postcode" => "SW1A 2AA" },
-  "Item3" => { "email" => "example@example.com" }
+  "Postcode1" => { "postcode" => "SW1A 0AA" },
+  "Address2" => { "addressline" => "10 Downing Street", "postcode" => "SW1A 2AA" },
+  "Person3" => { "email" => "example@example.com" }
 } )
 # batch_result will be something like:
 # {
-#   "Item1" => { "pc_mosaic_uk_6_group" => "A", "Match" => "PC" },
-#   "Item2" => { "pc_mosaic_uk_6_group" => "B", "Match" => "H" },
-#   "Item3" => { "pc_mosaic_uk_6_group" => "C", "Match" => "P" },
+#   "Postcode1" => {
+#     "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+#     "Match" => { api_code: 'PC', match_level: 'postcode' }
+#   },
+#   "Address2" => {
+#     "pc_mosaic_uk_6_group" => { api_code: 'B', group: 'B', description: 'Prestige Positions' },
+#     "Match" => { api_code: 'H', match_level: 'household' }
+#   },
+#   "Person3" => {
+#     "pc_mosaic_uk_6_group" => { api_code: 'O', group: 'O', description: 'Rental Hubs' },
+#     "Match" => { api_code: 'P', match_level: 'person' }
+#   }
 # }
 ```
 
@@ -68,27 +83,167 @@ Refer to the ConsumerView API Developer Guide for all valid combinations of sear
 
 Each successful call to `lookup` will return a hash containing the keys provided in the `search_items` hash input parameter, as well as the results returned by the ConsumerView API for that item.
 
-For example, if you provided the keys "Item1" & "Item2" in the `search_items` hash, then these keys would be the keys in the returned hash.
+For example, as per the basic example above, if you provide the keys "Postcode1", "Address2" & "Person3" in the `search_items` hash, then these are also used as the keys in the result hash.
 
-The values in the returned hash are simply what was returned by the ConsumerView API for that search item, parsed into a ruby hash from the JSON returned by the API.
+For each search item, there will be a hash containing all the data returned by the ConsumerView API for that search item. Your license with Experian determines the attributes the ConsumerView API will return.
 
-A successful match will always contain a `Match` key, detailing the level at which the lookup matched:
+By default, the result hash for each search item will contain the name for each attribute exactly as it is returned by the ConsumerView API, and either the raw value returned by the ConsumerView API for that attribute, or a transformed value if a transformer has been written for that attribute.
 
-- `PC` = Postcode
-- `H` = Household
-- `P` = Person
+For example:
 
-The other fields in the result hash will depend upon which ConsumerView variables are covered by your license with Experian. You should refer to the ConsumerView API Variables and Propensities Reference Guide for details on all available variables and the values the ConsumerView API will return for each variable.
+```ruby
+{
+  "Postcode1" => {
+    "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+    "Match" => { api_code: 'PC', match_level: 'postcode' }
+  },
+  "Address2" => {
+    "pc_mosaic_uk_6_group" => { api_code: 'B', group: 'B', description: 'Prestige Positions' },
+    "Match" => { api_code: 'H', match_level: 'household' }
+  },
+  "Person3" => {
+    "pc_mosaic_uk_6_group" => { api_code: 'O', group: 'O', description: 'Rental Hubs' },
+    "Match" => { api_code: 'P', match_level: 'person' }
+  }
+}
+```
 
-### Mapping / translating the returned data
+Three search items were provided, and all 3 were matched successfully. For each search item, the ConsumerView API returned the `pc_mosaic_uk_6_group` and the `Match` attributes. The raw values for these were transformed from single value strings into richer hashes containing the description of what the API values actually mean. The `Postcode1` search item had raw API values of `A` for the `pc_mosaic_uk_6_group` and `PC` for `Match` - these values may not be particularly instructive without referring to the ConsumerView API documentation, but here they have been automatically mapped to richer hash objects that tell us that Mosiac Group `A` is the "City Prosperity" demograhic, and a Match of `PC` means a match at the postcode level.
 
-The ConsumerView API returns a String code for _most_ variables (although in some cases it returns a percentile or percentage propensity). These String codes are generally not especially meaningful unless interpreted against the ConsumerView API Variables and Propensities Reference Guide.
 
-This gem provides a number of mapping classes to make it easy to translate from the String code into other useful information.
+Note that only some fields are automatically transformed into richer hashes - see the [`Transformers::Attributes` classes](lib/experian_consumer_view/transformers/attributes) to see which attributes are transformed and how.
 
-For example, you can use this to translate the "pc_mosaic_uk_6_group" variable from the code "01" which is returned by the API, into the actual Mosaic Code of "A01", and the description of this Mosaic Code, "World-Class Wealth".
+Other attributes will be returned un transformed, using the raw values returned from the API. Refer to the ConsumerView API Variables and Propensities Reference Guide for details on all available variables and the values the ConsumerView API will return for each variable.
 
-TODO: Provide example of doing this.
+_You can also apply custom transformations to the data returned by the ConsumerView API, in order to automatically transform the data into a richer or more useable format for consumption by your application. This is described further in the advanced useage section of this documentation._
+
+#### The Match attribute
+
+Note that `Match` is a special attribute which is always returned if the search was successful, and indicates at what level a match was found.
+
+For example, if searching for a household, it may be that demographic data for the specific household could not be found, but demographic data for the postcode was found, in which case the `Match` attribute would be 'PC' (postcode) rather than 'H' (household).
+
+## Advanced Useage
+
+### Providing a token cache
+
+If you are using this code in a multi-server / cloud-based setup, then it is recommended that you override the default in-memory token cache.
+
+Using the in-memory token cache in such environments may lead to multiple servers logging into the ConsumerView API with the same credentials, invalidating the others' API tokens.
+
+A distributed cache, eg. Redis, is recommended for this.
+
+You may override the default by initializing the `Client` with the `token_cache` option. This must be an `ActiveSupport::Cache` object. For example, in a Rails app, if the default Rails cache has already been configured to use a distributed cache like Redis, you may use:
+
+```ruby
+client = ExperianConsumerView::Client.new(
+  user_id: 'YOUR_USER_ID',
+  password: 'YOUR_PASSWORD',
+  client_id: 'YOUR_CLIENT_ID',
+  asset_id: 'YOUR_ASSET_ID',
+  options: { token_cache: Rails.cache }
+)
+```
+
+### Using a non-standard API URL
+
+This can be useful if you need to test your code, eg. against Experians Staging server. Override the default URL by initializing the `Client` with the `api_base_url` option:
+
+```ruby
+client = ExperianConsumerView::Client.new(
+  user_id: 'YOUR_USER_ID',
+  password: 'YOUR_PASSWORD',
+  client_id: 'YOUR_CLIENT_ID',
+  asset_id: 'YOUR_ASSET_ID',
+  options: { api_base_url: ExperianConsumerView::Api::STAGING_URL }
+)
+```
+
+### Mapping / transforming the returned data
+
+By default, this gem maps _some_ of the raw attributes returned by the ConsumerView API into richer objects for ease of use by other applications.
+
+However, you can provide your own transformer by initializing the `Client` with the `result_transformer` option.
+
+#### Turning off result transforming
+
+Transforming will have some performance impact. If you just want the raw data provided by the API, then use the provided `NoOpTransformer`.
+
+```ruby
+client = ExperianConsumerView::Client.new(
+  user_id: 'YOUR_USER_ID',
+  password: 'YOUR_PASSWORD',
+  client_id: 'YOUR_CLIENT_ID',
+  asset_id: 'YOUR_ASSET_ID',
+  options: { result_transformer: ExperianConsumerView::Transformers::NoOpTransformer.new }
+)
+```
+
+Note that the results will still be parsed from a JSON String into a Ruby Hash, which will be keyed on the search item keys. If you want the _completely_ raw API results, you may use the `ExperianConsumerView::Api` class directly.
+
+#### Using your own attribute transformers
+
+If you simply want to transform more attributes, or transform them in a slightly different manner, you can use the provided `ResultTransformer` as a base, and register as many custom attribute transformers as you wish on it.
+
+Each attribute transformer must provide an `attribute_name` method, and a `transform_attribute` method, and examples can be seen in the [`Transformers::Attributes` module](lib/experian_consumer_view/transformers/attributes). New attribute transformers can be easily created by extending `ExperianConsumerView::Transformers::Attributes::Base`, but this is not required as long as the necessary methods are implemented.
+
+```ruby
+class CustomAttributeTransformer
+  def attribute_name
+    "p_head_of_household"     # Transform attributes returned by the API with this name
+  end
+  def transform_attribute(value)
+    case value
+    when '0'
+      'Not head of household' # The API Code of 0 means 'Not head of household'
+    when '1'
+      'Head of household'     # The API Code of 1 means 'Head of household'
+    else
+      'Unclassified'          # Any other API Code means 'Unclassified'
+    end
+  end
+end
+
+my_result_transformer = ExperianConsumerView::Transformers::ResultTransformer.new
+my_result_transformer.register_attribute_transformer(CustomAttributeTransformer.new)
+
+client = ExperianConsumerView::Client.new(
+  user_id: 'YOUR_USER_ID',
+  password: 'YOUR_PASSWORD',
+  client_id: 'YOUR_CLIENT_ID',
+  asset_id: 'YOUR_ASSET_ID',
+  options: { result_transformer: my_result_transformer }
+)
+```
+
+#### Using a completely custom result transformer
+
+If you want _complete_ control of how the result hash is transformed, you may implement your own result transformer.
+
+A result transformer simply has to provide a `transform` method. This method must accept a hash which is the parsed JSON for a _single_ search item, and should return the transformed hash for that search item.
+
+A simple example is shown below.
+
+```ruby
+class CustomResultTranslator
+  # Exact attributes will depend on the Experian license, but input will be something like this...
+  # { "pc_mosaic_uk_6_group" => "A", "pc_mosaic_uk_6_type" => "02", "Match" => "PC" }
+  def transform(result_hash)
+    # transform the keys from Strings into symbols, and discard the Match attribute
+    new_hash = {}
+    result_hash.each { |k,v| new_hash[k.to_sym] = v unless k == "Match" }
+    new_hash
+  end
+end
+
+client = ExperianConsumerView::Client.new(
+  user_id: 'YOUR_USER_ID',
+  password: 'YOUR_PASSWORD',
+  client_id: 'YOUR_CLIENT_ID',
+  asset_id: 'YOUR_ASSET_ID',
+  options: { result_transformer: CustomResultTranslator.new }
+)
+```
 
 ## License
 

@@ -135,7 +135,7 @@ module ExperianConsumerView
 
       results_hash = {}
       results.each_with_index do |single_result, i|
-        results_hash[identifiers[i]] = @result_transformer.transform(result_hash: single_result)
+        results_hash[identifiers[i]] = @result_transformer.transform(single_result)
       end
 
       results_hash

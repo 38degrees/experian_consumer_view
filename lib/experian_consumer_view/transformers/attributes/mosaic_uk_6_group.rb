@@ -11,7 +11,7 @@ module ExperianConsumerView
     module Attributes
       # An Attribute Transformer to tranform the ConsumerView 'pc_mosaic_uk_6_group' field
       class MosaicUk6Group
-        extend ExperianConsumerView::Transformers::Attributes::Base
+        extend Base
 
         ATTRIBUTE_NAME = 'pc_mosaic_uk_6_group'
 

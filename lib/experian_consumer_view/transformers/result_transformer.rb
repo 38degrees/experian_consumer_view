@@ -37,7 +37,7 @@ module ExperianConsumerView
       #   eg. a single individual, household, or postcode.
       #
       # @returns [Hash] the transformed hash of result data
-      def transform(result_hash:)
+      def transform(result_hash)
         result_hash.each do |k, v|
           result_hash[k] = @attribute_transformers[k].transform_attribute(v) if @attribute_transformers[k]
         end
