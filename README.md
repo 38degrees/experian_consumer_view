@@ -38,6 +38,7 @@ result = client.lookup(search_items: { "MyPostcode" => { "postcode" => "SW1A 0AA
 # {
 #   "MyPostcode" => {
 #     "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+#     "pc_mosaic_uk_6_type" => { api_code: '03', type: 'A03', description: 'Penthouse Chic' },
 #     "Match" => { api_code: 'PC', match_level: 'postcode' }
 #   }
 # }
@@ -88,7 +89,7 @@ The values are the items you wish to search for in the API, in order to get demo
 - Providing an `addressline` and a `postcode` would search for data at the household level.
 - Providing an `email` would search for data at the person level.
 
-Refer to the ConsumerView API Developer Guide for all valid combinations of search keys. Note that these may change over time as the ConsumerView API changes.  
+There are other valid combinations of search keys - refer to the ConsumerView API Developer Guide. Note, search keys may change over time as the ConsumerView API changes.
 
 ### Understanding what is returned from the lookup method
 
@@ -125,17 +126,19 @@ client.lookup(search_items: {
 
 In this example, the keys "Postcode1", "Address2" & "Person3" were provided in the `search_items`, so these are also be used as the keys in the result hash.
 
-Each search item has a hash containing all the data returned by the ConsumerView API for that search item. For example, here we can see each search item has the mosaic group & type, as well as the match level.
+Each search item has a hash containing all the data returned by the ConsumerView API for that search item. For example, here we can see each search item has the mosaic group (`pc_mosaic_uk_6_group`) & type (`pc_mosaic_uk_6_type`), as well as the match level (`Match`).
 
 If a search item is not successfully looked up in the Experian API, that search item will have an empty hash.
 
-Note that Your license with Experian will determine the exact attributes the ConsumerView API will return, and you should refer to the ConsumerView API Variables and Propensities Reference Guide for details on all available variables and their possible values.
+Note, your license with Experian will determine the exact attributes the ConsumerView API will return. Refer to the ConsumerView API Variables and Propensities Reference Guide for details on what is available, and all possible values.
 
 #### Mapping attributes
 
-By default, some fields are automatically transformed into richer hashes.
+By default, some attributes are automatically transformed from single values into richer objects.
 
-In the example above, the ConsumerView API returned the `pc_mosaic_uk_6_group`, `pc_mosaic_uk_6_type`, and `Match` attributes for the "Postcode1" search item. The raw values returned by the API would have been `A`, `03`, and `PC` respectively, which is not very informative. Instead, they have been automatically transformed into richer hashes containing more meaningful information - eg. we can see the mosaic group `A` means "City Prosperity", and the mosaic type `03` means "Penthouse Chic".
+In the example above, the ConsumerView API returned `pc_mosaic_uk_6_group`, `pc_mosaic_uk_6_type`, and `Match` attributes. For the "Postcode1" search item, the raw values from the API would have been `A`, `03`, and `PC` respectively - these are not very informative.
+
+Instead, they have been automatically transformed into richer hashes containing more meaningful information - eg. we can see from the richer hashes that the mosaic group `A` means "City Prosperity", and the mosaic type `03` means "Penthouse Chic".
 
 See the [`Transformers::Attributes` classes](lib/experian_consumer_view/transformers/attributes) to see exactly which attributes are transformed, and how.
 
@@ -153,13 +156,13 @@ For example, if searching for a household, it may be that demographic data for t
 
 ### Providing a token cache
 
-If you are using this code in a multi-server / cloud-based setup, then it is recommended that you override the default in-memory token cache.
+If you are using this code in a multi-server / cloud-based setup, then it is recommended that you override the default in-memory token cache. A distributed cache, eg. Redis, is recommended.
 
 Using the in-memory token cache in such environments may lead to multiple servers logging into the ConsumerView API with the same credentials, invalidating the others' API tokens.
 
-A distributed cache, eg. Redis, is recommended for this.
+You may override the default by initializing the `Client` with the `token_cache` option. This must be an `ActiveSupport::Cache` object.
 
-You may override the default by initializing the `Client` with the `token_cache` option. This must be an `ActiveSupport::Cache` object. For example, in a Rails app, if the default Rails cache has already been configured to use a distributed cache like Redis, you may use:
+For example, in a Rails app, if the default Rails cache has already been configured to use a distributed cache like Redis, you may use:
 
 ```ruby
 client = ExperianConsumerView::Client.new(
@@ -211,7 +214,11 @@ Note that the results will still be parsed from a JSON String into a Ruby Hash, 
 
 If you simply want to transform more attributes, or transform them in a slightly different manner, you can use the provided `ResultTransformer` as a base, and register as many custom attribute transformers as you wish on it.
 
-Each attribute transformer must provide an `attribute_name` method, and a `transform_attribute` method, and examples can be seen in the [`Transformers::Attributes` module](lib/experian_consumer_view/transformers/attributes). New attribute transformers can be easily created by extending `ExperianConsumerView::Transformers::Attributes::Base`, but this is not required as long as the necessary methods are implemented.
+Each attribute transformer must provide an `attribute_name` method, and a `transform_attribute` method, and examples can be seen in the [Transformers::Attributes module](lib/experian_consumer_view/transformers/attributes).
+
+New attribute transformers can be easily created by extending `ExperianConsumerView::Transformers::Attributes::Base`, but this is not required as long as the necessary methods are implemented.
+
+An example of using a custom attribute transformer:
 
 ```ruby
 class CustomAttributeTransformer
@@ -246,9 +253,9 @@ client = ExperianConsumerView::Client.new(
 
 If you want _complete_ control of how the result hash is transformed, you may implement your own result transformer.
 
-A result transformer simply has to provide a `transform` method. This method must accept a hash which is the parsed JSON for a _single_ search item, and should return the transformed hash for that search item.
+A result transformer has to provide the `transform` method. This must accept a hash which is the parsed JSON for a _single_ search item, and should return the transformed hash for that search item.
 
-A simple example is shown below.
+A simple example:
 
 ```ruby
 class CustomResultTranslator
