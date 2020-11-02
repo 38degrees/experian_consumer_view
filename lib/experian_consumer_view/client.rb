@@ -76,8 +76,8 @@ module ExperianConsumerView
     # @returns [Hash] a hash of identifiers to the results returned by the ConsumerView API. Eg.
     #   <tt>
     #   {
-    #      "PersonA" => { "pc_mosaic_uk_6_group":"G", "Match":"P" } ,
-    #      "Postcode1" => { "pc_mosaic_uk_6_group":"G", "Match":"PC" }
+    #      "PersonA" => { "pc_mosaic_uk_7_group":"G", "Match":"P" } ,
+    #      "Postcode1" => { "pc_mosaic_uk_7_group":"G", "Match":"PC" }
     #   }
     #   </tt>
     def lookup(search_items:, auto_retries: 1)

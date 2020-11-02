@@ -37,8 +37,8 @@ result = client.lookup(search_items: { "MyPostcode" => { "postcode" => "SW1A 0AA
 # result will be something like:
 # {
 #   "MyPostcode" => {
-#     "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
-#     "pc_mosaic_uk_6_type" => { api_code: '03', type: 'A03', description: 'Penthouse Chic' },
+#     "pc_mosaic_uk_7_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+#     "pc_mosaic_uk_7_type" => { api_code: '03', type: 'A03', description: 'Penthouse Chic' },
 #     "Match" => { api_code: 'PC', match_level: 'postcode' }
 #   }
 # }
@@ -52,18 +52,18 @@ batch_result = client.lookup(search_items: {
 # batch_result will be something like:
 # {
 #   "Postcode1" => {
-#     "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
-#     "pc_mosaic_uk_6_type" => { api_code: '03', type: 'A03', description: 'Penthouse Chic' },
+#     "pc_mosaic_uk_7_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+#     "pc_mosaic_uk_7_type" => { api_code: '03', type: 'A03', description: 'Penthouse Chic' },
 #     "Match" => { api_code: 'PC', match_level: 'postcode' }
 #   },
 #   "Address2" => {
-#     "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
-#     "pc_mosaic_uk_6_type" => { api_code: '02', type: 'A02', description: 'Uptown Elite' },
+#     "pc_mosaic_uk_7_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+#     "pc_mosaic_uk_7_type" => { api_code: '02', type: 'A02', description: 'Uptown Elite' },
 #     "Match" => { api_code: 'H', match_level: 'household' }
 #   },
 #   "Person3" => {
-#     "pc_mosaic_uk_6_group" => { api_code: 'O', group: 'O', description: 'Rental Hubs' },
-#     "pc_mosaic_uk_6_type" => { api_code: '66', type: 'O66', description: 'Student Scene' },
+#     "pc_mosaic_uk_7_group" => { api_code: 'O', group: 'O', description: 'Rental Hubs' },
+#     "pc_mosaic_uk_7_type" => { api_code: '66', type: 'O66', description: 'Student Scene' },
 #     "Match" => { api_code: 'P', match_level: 'person' }
 #   }
 # }
@@ -107,18 +107,18 @@ client.lookup(search_items: {
 # Outputs something like:
 {
   "Postcode1" => {
-    "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
-    "pc_mosaic_uk_6_type" => { api_code: '03', type: 'A03', description: 'Penthouse Chic' },
+    "pc_mosaic_uk_7_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+    "pc_mosaic_uk_7_type" => { api_code: '03', type: 'A03', description: 'Penthouse Chic' },
     "Match" => { api_code: 'PC', match_level: 'postcode' }
   },
   "Address2" => {
-    "pc_mosaic_uk_6_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
-    "pc_mosaic_uk_6_type" => { api_code: '02', type: 'A02', description: 'Uptown Elite' },
+    "pc_mosaic_uk_7_group" => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+    "pc_mosaic_uk_7_type" => { api_code: '02', type: 'A02', description: 'Uptown Elite' },
     "Match" => { api_code: 'H', match_level: 'household' }
   },
   "Person3" => {
-    "pc_mosaic_uk_6_group" => { api_code: 'O', group: 'O', description: 'Rental Hubs' },
-    "pc_mosaic_uk_6_type" => { api_code: '66', type: 'O66', description: 'Student Scene' },
+    "pc_mosaic_uk_7_group" => { api_code: 'O', group: 'O', description: 'Rental Hubs' },
+    "pc_mosaic_uk_7_type" => { api_code: '66', type: 'O66', description: 'Student Scene' },
     "Match" => { api_code: 'P', match_level: 'person' }
   }
 }
@@ -126,7 +126,7 @@ client.lookup(search_items: {
 
 In this example, the keys "Postcode1", "Address2" & "Person3" were provided in the `search_items`, so these are also be used as the keys in the result hash.
 
-Each search item has a hash containing all the data returned by the ConsumerView API for that search item. For example, here we can see each search item has the mosaic group (`pc_mosaic_uk_6_group`) & type (`pc_mosaic_uk_6_type`), as well as the match level (`Match`).
+Each search item has a hash containing all the data returned by the ConsumerView API for that search item. For example, here we can see each search item has the mosaic group (`pc_mosaic_uk_7_group`) & type (`pc_mosaic_uk_7_type`), as well as the match level (`Match`).
 
 If a search item is not successfully looked up in the Experian API, that search item will have an empty hash.
 
@@ -136,7 +136,7 @@ Note, your license with Experian will determine the exact attributes the Consume
 
 By default, some attributes are automatically transformed from single values into richer objects.
 
-In the example above, the ConsumerView API returned `pc_mosaic_uk_6_group`, `pc_mosaic_uk_6_type`, and `Match` attributes. For the "Postcode1" search item, the raw values from the API would have been `A`, `03`, and `PC` respectively - these are not very informative.
+In the example above, the ConsumerView API returned `pc_mosaic_uk_7_group`, `pc_mosaic_uk_7_type`, and `Match` attributes. For the "Postcode1" search item, the raw values from the API would have been `A`, `03`, and `PC` respectively - these are not very informative.
 
 Instead, they have been automatically transformed into richer hashes containing more meaningful information - eg. we can see from the richer hashes that the mosaic group `A` means "City Prosperity", and the mosaic type `03` means "Penthouse Chic".
 
@@ -209,7 +209,7 @@ client = ExperianConsumerView::Client.new(
 
 result = client.lookup(search_items: { "MyPostcode" => { "postcode" => "SW1A 0AA" } })
 # result will be something like:
-# { "MyPostcode" => { "pc_mosaic_uk_6_group" => "A", "pc_mosaic_uk_6_type" => "03", "Match" => "PC" } }
+# { "MyPostcode" => { "pc_mosaic_uk_7_group" => "A", "pc_mosaic_uk_7_type" => "03", "Match" => "PC" } }
 ```
 
 Note that the results will still be parsed from a JSON String into a Ruby Hash, which will be keyed on the search item keys. If you want the _completely_ raw API results, you may use the `ExperianConsumerView::Api` class directly.
@@ -257,8 +257,8 @@ result = client.lookup(search_items: { "PersonA" => { "email" => "example@exampl
 # {
 #   "PersonA" => {
 #     "p_head_of_household" => 'Head of household',
-#     "pc_mosaic_uk_6_group" => 'G',
-#     "pc_mosaic_uk_6_type" => '28',
+#     "pc_mosaic_uk_7_group" => 'G',
+#     "pc_mosaic_uk_7_type" => '28',
 #     "Match" => 'P'
 #   }
 # }
@@ -275,7 +275,7 @@ A simple example:
 ```ruby
 class CustomResultTranslator
   # Exact attributes will depend on the Experian license, but input will be something like this...
-  # { "pc_mosaic_uk_6_group" => "A", "pc_mosaic_uk_6_type" => "02", "Match" => "PC" }
+  # { "pc_mosaic_uk_7_group" => "A", "pc_mosaic_uk_7_type" => "02", "Match" => "PC" }
   def transform(result_hash)
     new_hash = {}
     # Discard the Match attribute, then transform keys from Strings into symbols
@@ -294,7 +294,7 @@ client = ExperianConsumerView::Client.new(
 
 result = client.lookup(search_items: { "MyPostcode" => { "postcode" => "SW1A 0AA" } })
 # result will be something like:
-# { "MyPostcode" => { pc_mosaic_uk_6_group: "A", pc_mosaic_uk_6_type: "03" } }
+# { "MyPostcode" => { pc_mosaic_uk_7_group: "A", pc_mosaic_uk_7_type: "03" } }
 ```
 
 ## License

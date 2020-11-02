@@ -55,19 +55,19 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
 
   let(:lookup_response) do
     [
-      { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
-      { 'pc_mosaic_uk_6_type' => '66', 'Match' => 'PC' }
+      { 'pc_mosaic_uk_7_group' => 'A', 'Match' => 'P' },
+      { 'pc_mosaic_uk_7_type' => '66', 'Match' => 'PC' }
     ].to_json
   end
 
   let(:expected_result) do
     {
       'PersonA' => {
-        'pc_mosaic_uk_6_group' => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+        'pc_mosaic_uk_7_group' => { api_code: 'A', group: 'A', description: 'City Prosperity' },
         'Match' => { api_code: 'P', match_level: 'person' }
       },
       'Postcode1' => {
-        'pc_mosaic_uk_6_type' => { api_code: '66', type: 'O66', description: 'Student Scene' },
+        'pc_mosaic_uk_7_type' => { api_code: '66', type: 'O66', description: 'Student Scene' },
         'Match' => { api_code: 'PC', match_level: 'postcode' }
       }
     }
@@ -106,7 +106,7 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
     context "when API doesn't match some looked up data" do
       let(:lookup_response) do
         [
-          { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+          { 'pc_mosaic_uk_7_group' => 'A', 'Match' => 'P' },
           {}
         ].to_json
       end
@@ -114,7 +114,7 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
       let(:expected_result) do
         {
           'PersonA' => {
-            'pc_mosaic_uk_6_group' => { api_code: 'A', group: 'A', description: 'City Prosperity' },
+            'pc_mosaic_uk_7_group' => { api_code: 'A', group: 'A', description: 'City Prosperity' },
             'Match' => { api_code: 'P', match_level: 'person' }
           },
           'Postcode1' => {}
@@ -241,7 +241,7 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
     context 'when lookup returns the wrong number of records' do
       context 'when lookup returns too few records' do
         let(:lookup_response) do
-          [{ 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' }].to_json
+          [{ 'pc_mosaic_uk_7_group' => 'A', 'Match' => 'P' }].to_json
         end
 
         it 'raises an ApiResultSizeMismatchError' do
@@ -261,8 +261,8 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
       context 'when lookup returns too many records' do
         let(:lookup_response) do
           [
-            { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
-            { 'pc_mosaic_uk_6_group' => 'B', 'Match' => 'PC' },
+            { 'pc_mosaic_uk_7_group' => 'A', 'Match' => 'P' },
+            { 'pc_mosaic_uk_7_group' => 'B', 'Match' => 'PC' },
             {}
           ].to_json
         end
@@ -297,8 +297,8 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
     context 'when API finds matches for all looked up data' do
       let(:expected_result) do
         {
-          'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
-          'Postcode1' => { 'pc_mosaic_uk_6_type' => '66', 'Match' => 'PC' }
+          'PersonA' => { 'pc_mosaic_uk_7_group' => 'A', 'Match' => 'P' },
+          'Postcode1' => { 'pc_mosaic_uk_7_type' => '66', 'Match' => 'PC' }
         }
       end
 
@@ -319,14 +319,14 @@ RSpec.describe 'Experian ConsumerView Scenario Tests', integration: true do
     context "when API doesn't match some looked up data" do
       let(:lookup_response) do
         [
-          { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+          { 'pc_mosaic_uk_7_group' => 'A', 'Match' => 'P' },
           {}
         ].to_json
       end
 
       let(:expected_result) do
         {
-          'PersonA' => { 'pc_mosaic_uk_6_group' => 'A', 'Match' => 'P' },
+          'PersonA' => { 'pc_mosaic_uk_7_group' => 'A', 'Match' => 'P' },
           'Postcode1' => {}
         }
       end
