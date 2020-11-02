@@ -9,11 +9,11 @@ require_relative 'base'
 module ExperianConsumerView
   module Transformers
     module Attributes
-      # An Attribute Transformer to tranform the ConsumerView 'pc_mosaic_uk_6_group' field
-      class MosaicUk6Group
+      # An Attribute Transformer to tranform the ConsumerView 'pc_mosaic_uk_7_group' field
+      class PostcodeMosaicUk7Group
         extend Base
 
-        ATTRIBUTE_NAME = 'pc_mosaic_uk_6_group'
+        ATTRIBUTE_NAME = 'pc_mosaic_uk_7_group'
 
         CODE_MAP = {
           'A' => { api_code: 'A', group: 'A', description: 'City Prosperity' },

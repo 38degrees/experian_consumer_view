@@ -140,7 +140,7 @@ In the example above, the ConsumerView API returned `pc_mosaic_uk_6_group`, `pc_
 
 Instead, they have been automatically transformed into richer hashes containing more meaningful information - eg. we can see from the richer hashes that the mosaic group `A` means "City Prosperity", and the mosaic type `03` means "Penthouse Chic".
 
-See the [`Transformers::Attributes` classes](lib/experian_consumer_view/transformers/attributes) to see exactly which attributes are transformed, and how.
+See the [Transformers::Attributes classes](lib/experian_consumer_view/transformers/attributes) to see exactly which attributes are transformed, and how.
 
 Attributes without transformers will still be returned, but they will just have the raw value from the API.
 

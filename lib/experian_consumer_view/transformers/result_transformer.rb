@@ -48,8 +48,8 @@ module ExperianConsumerView
       ################################################
       DEFAULT_ATTRIBUTE_TRANSFORMERS = [
         ExperianConsumerView::Transformers::Attributes::Match,
-        ExperianConsumerView::Transformers::Attributes::MosaicUk6Group,
-        ExperianConsumerView::Transformers::Attributes::MosaicUk6Type
+        ExperianConsumerView::Transformers::Attributes::PostcodeMosaicUk7Group,
+        ExperianConsumerView::Transformers::Attributes::PostcodeMosaicUk7Type
       ].freeze
 
       # Class instance variable
