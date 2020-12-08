@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    experian_consumer_view (0.1.0)
+    experian_consumer_view (1.0.0)
       activesupport (>= 5.2)
       faraday (~> 1.0)
 
