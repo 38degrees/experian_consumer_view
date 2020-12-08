@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     experian_consumer_view (0.1.0)
-      activesupport (>= 5.2, < 6.1)
+      activesupport (>= 5.2)
       faraday (~> 1.0)
 
 GEM
