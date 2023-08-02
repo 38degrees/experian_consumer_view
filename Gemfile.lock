@@ -1,19 +1,18 @@
 PATH
   remote: .
   specs:
-    experian_consumer_view (1.1.0)
+    experian_consumer_view (1.2.0)
       activesupport (>= 5.2)
       faraday (~> 2)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (6.1.7.4)
+    activesupport (7.0.6)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
       tzinfo (~> 2.0)
-      zeitwerk (~> 2.3)
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
     ast (2.4.1)
@@ -84,7 +83,6 @@ GEM
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
     yard (0.9.25)
-    zeitwerk (2.6.10)
 
 PLATFORMS
   ruby
